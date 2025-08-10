@@ -1,6 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-// TypeScriptの型定義
 export interface ILog extends Document {
   title: string;
   content: string;

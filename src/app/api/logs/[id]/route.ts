@@ -2,35 +2,36 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Log } from '@/models/Log';
 
-// GET: 単一ログ取得
+// 個別取得（GET）
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await ctx.params;
   await connectToDatabase();
-  const log = await Log.findById(params.id);
-  if (!log) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const log = await Log.findById(id);
   return NextResponse.json(log);
 }
 
-// PUT: 更新
+// 更新（PUT）
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await ctx.params;
   await connectToDatabase();
   const data = await req.json();
-  const log = await Log.findByIdAndUpdate(params.id, data, { new: true });
-  if (!log) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const log = await Log.findByIdAndUpdate(id, data, { new: true });
   return NextResponse.json(log);
 }
 
-// DELETE: 削除
+// 削除（DELETE）
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await ctx.params;
   await connectToDatabase();
-  await Log.findByIdAndDelete(params.id);
-  return NextResponse.json({ message: 'Deleted successfully' });
+  await Log.findByIdAndDelete(id);
+  return NextResponse.json({ message: 'Deleted' });
 }
