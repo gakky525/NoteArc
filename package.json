@@ -9,10 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth/mongodb-adapter": "^3.10.0",
     "mongoose": "^8.17.1",
     "next": "15.4.6",
     "next-auth": "^4.24.11",
     "react": "19.1.0",
+    "react-calendar-heatmap": "^1.10.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
