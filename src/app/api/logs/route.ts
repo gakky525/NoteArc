@@ -26,6 +26,7 @@ export async function POST(req: Request) {
   }
 }
 
+// PUT: 変更
 export async function PUT(req: Request) {
   try {
     await connectToDatabase();
@@ -54,6 +55,7 @@ export async function PUT(req: Request) {
   }
 }
 
+// DELETE: 削除
 export async function DELETE(req: Request) {
   try {
     await connectToDatabase();
