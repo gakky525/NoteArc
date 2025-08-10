@@ -10,7 +10,7 @@ export interface ILog extends Document {
 
 const LogSchema = new Schema<ILog>(
   {
-    title: { type: String, required: true, maxlength: 100 },
+    title: { type: String, required: true, maxLength: 100 },
     content: { type: String, required: true },
     date: { type: Date, default: Date.now },
     tags: [{ type: String }],
