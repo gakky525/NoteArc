@@ -1,103 +1,186 @@
-import Image from "next/image";
+'use client';
+
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className='min-h-[80vh] flex items-center justify-center bg-slate-50 py-16'>
+      <div className='w-full max-w-4xl mx-auto px-6'>
+        <div className='bg-white rounded-2xl shadow-xl overflow-hidden'>
+          <div className='md:flex'>
+            <div className='p-10 md:w-2/3'>
+              <h1 className='text-4xl sm:text-5xl font-extrabold leading-tight mb-4'>
+                メモ帳感覚で使える
+                <span className='text-blue-600'> 学習ログ</span>
+              </h1>
+              <p className='text-gray-600 text-lg mb-6'>
+                日々の学びを記録して、振り返りと継続をシンプルに。Markdown対応でメモ感覚に使える学習ログアプリです。
+              </p>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+              <ul className='grid gap-3 sm:grid-cols-3 mb-6'>
+                <li className='flex items-start gap-3'>
+                  <span className='mt-1 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600'>
+                    <svg
+                      width='18'
+                      height='18'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      aria-hidden
+                    >
+                      <path
+                        d='M5 12h14'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                      <path
+                        d='M5 6h14'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                      <path
+                        d='M5 18h14'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className='font-medium'>かんたん記録</div>
+                    <div className='text-sm text-gray-500'>
+                      メモ帳感覚で気楽に使えます
+                    </div>
+                  </div>
+                </li>
+
+                <li className='flex items-start gap-3'>
+                  <span className='mt-1 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-600'>
+                    <svg
+                      width='18'
+                      height='18'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      aria-hidden
+                    >
+                      <path
+                        d='M12 5v14'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                      />
+                      <path
+                        d='M5 12h14'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                      />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className='font-medium'>Markdown対応</div>
+                    <div className='text-sm text-gray-500'>
+                      見やすい形式で振り返りに最適
+                    </div>
+                  </div>
+                </li>
+
+                <li className='flex items-start gap-3'>
+                  <span className='mt-1 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600'>
+                    <svg
+                      width='18'
+                      height='18'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      aria-hidden
+                    >
+                      <circle
+                        cx='12'
+                        cy='12'
+                        r='3'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                      />
+                      <path
+                        d='M19.4 15a7 7 0 10-14.8 0'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                      />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className='font-medium'>タグで整理</div>
+                    <div className='text-sm text-gray-500'>
+                      タグで振り返りやすい
+                    </div>
+                  </div>
+                </li>
+              </ul>
+
+              <div className='flex flex-col sm:flex-row gap-3 sm:items-center'>
+                <Link
+                  href='/login'
+                  className='inline-flex items-center justify-center px-5 py-3 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  aria-label='ログインページへ'
+                >
+                  ログイン
+                </Link>
+
+                <Link
+                  href='/register'
+                  className='inline-flex items-center justify-center px-5 py-3 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  aria-label='新規登録ページへ'
+                >
+                  新規登録
+                </Link>
+
+                <button
+                  onClick={() => {
+                    alert(
+                      'ゲスト機能は後で実装します。まずは登録／ログインしてください。'
+                    );
+                  }}
+                  className='inline-flex items-center justify-center px-5 py-3 rounded-lg border text-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  aria-label='ゲストで試す（未実装）'
+                >
+                  ゲストで試す
+                </button>
+              </div>
+            </div>
+
+            <div className='hidden md:flex items-center justify-center md:w-1/3 bg-gradient-to-b from-blue-50 to-white p-6'>
+              <div className='w-full max-w-xs'>
+                <div className='rounded-lg border p-4 bg-white shadow-sm'>
+                  {/* <div className='text-sm text-gray-500 mb-2'>今日の学習</div> */}
+                  <h3 className='font-semibold'>Next.js + MongoDB</h3>
+                  <p className='text-xs text-gray-500 mt-2 mb-3'>
+                    Markdown でログを残して継続的に学習しましょう！
+                  </p>
+                  <div className='flex gap-2 flex-wrap'>
+                    <span className='text-xs bg-gray-100 px-2 py-1 rounded'>
+                      #nextjs
+                    </span>
+                    <span className='text-xs bg-gray-100 px-2 py-1 rounded'>
+                      #mongodb
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className='px-6 py-4 border-t text-sm text-gray-500'>
+            <div className='max-w-3xl mx-auto'>
+              アカウント登録するとデータが保存され、いつでも見返すことができます。
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+    </main>
   );
 }
