@@ -5,18 +5,24 @@ export interface ILog extends Document {
   content: string;
   date: Date;
   tags: string[];
+  userId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const LogSchema = new Schema<ILog>(
   {
-    title: { type: String, required: true, maxLength: 100 },
+    title: { type: String, required: true, maxLength: 200 },
     content: { type: String, required: true },
     date: { type: Date, default: Date.now },
     tags: [{ type: String }],
+    userId: { type: String, required: true, index: true },
   },
   { timestamps: true }
 );
 
-// モデルの再利用（ホットリロード対策）
-export const Log: Model<ILog> =
-  mongoose.models.Log || mongoose.model<ILog>('Log', LogSchema);
+const Log: Model<ILog> =
+  (mongoose.models.Log as Model<ILog>) ||
+  mongoose.model<ILog>('Log', LogSchema);
+
+export { Log };
