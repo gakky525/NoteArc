@@ -1,0 +1,24 @@
+{
+  // Code Spell Checker (cSpell) のワードリスト
+  "cSpell.words": [
+    "longenough",
+    "nextauth",
+    "mongodb",
+    "mongoose",
+    "vitest",
+    "eslint",
+    "prettier",
+    "render",
+    "Auth.js",
+    "NextAuth",
+    "vite",
+    "tsconfig",
+    "stacktrace"
+  ],
+
+  // 必要なら、workspace の TypeScript を使う（VSCode の推奨設定）
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  // Optional: エディタのフォーマット設定をプロジェクト単位で固定したい場合（例）
+  "editor.formatOnSave": true
+}
