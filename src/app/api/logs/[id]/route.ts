@@ -11,16 +11,19 @@ const updateSchema = z.object({
   date: z.string().optional(),
 });
 
-type ParamsLike = Record<string, string> | Promise<Record<string, string> | undefined> | undefined;
-type RouteContext = { params?: ParamsLike } | undefined;
+async function resolveIdFromContext(context?: unknown): Promise<string | undefined> {
+  if (!context) return undefined;
 
-async function resolveIdFromContext(context: RouteContext): Promise<string | undefined> {
-  const params = await context?.params;
-  return params?.id;
+  const maybeParams = (context as { params?: unknown }).params;
+  if (maybeParams === undefined) return undefined;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const params = await Promise.resolve(maybeParams as any);
+  return params?.id as string | undefined;
 }
 
-/** GET - 個別取得 */
-export async function GET(_req: Request, context: RouteContext) {
+// GET
+export async function GET(_req: Request, context?: unknown) {
   const token = await getServerToken(_req);
   if (!token?.sub) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -38,8 +41,8 @@ export async function GET(_req: Request, context: RouteContext) {
   return NextResponse.json(log);
 }
 
-/** PUT - 更新 */
-export async function PUT(req: Request, context: RouteContext) {
+// PUT
+export async function PUT(req: Request, context?: unknown) {
   const token = await getServerToken(req);
   if (!token?.sub) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -72,8 +75,8 @@ export async function PUT(req: Request, context: RouteContext) {
   return NextResponse.json(existing);
 }
 
-/** DELETE - 削除 */
-export async function DELETE(_req: Request, context: RouteContext) {
+// DELETE
+export async function DELETE(_req: Request, context?: unknown) {
   const token = await getServerToken(_req);
   if (!token?.sub) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
