@@ -11,30 +11,44 @@ const updateSchema = z.object({
   date: z.string().optional(),
 });
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+type ParamsLike = Record<string, string> | Promise<Record<string, string> | undefined> | undefined;
+type RouteContext = { params?: ParamsLike } | undefined;
+
+async function resolveIdFromContext(context: RouteContext): Promise<string | undefined> {
+  const params = await context?.params;
+  return params?.id;
+}
+
+/** GET - 個別取得 */
+export async function GET(_req: Request, context: RouteContext) {
   const token = await getServerToken(_req);
-  if (!token?.sub)
+  if (!token?.sub) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const id = await resolveIdFromContext(context);
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   await connectToDatabase();
-  const log = await Log.findById(params.id).lean();
-  if (!log || log.userId !== token.sub)
+  const log = await Log.findById(id).lean();
+  if (!log || log.userId !== token.sub) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   return NextResponse.json(log);
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+/** PUT - 更新 */
+export async function PUT(req: Request, context: RouteContext) {
   const token = await getServerToken(req);
-  if (!token?.sub)
+  if (!token?.sub) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-  const body = await req.json();
+  const id = await resolveIdFromContext(context);
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+  const body = await req.json().catch(() => ({}));
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -44,33 +58,36 @@ export async function PUT(
   }
 
   await connectToDatabase();
-  const existing = await Log.findById(params.id);
-  if (!existing || existing.userId !== token.sub)
+  const existing = await Log.findById(id);
+  if (!existing || existing.userId !== token.sub) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   if (parsed.data.title !== undefined) existing.title = parsed.data.title;
   if (parsed.data.content !== undefined) existing.content = parsed.data.content;
   if (parsed.data.tags !== undefined) existing.tags = parsed.data.tags;
-  if (parsed.data.date !== undefined)
-    existing.date = new Date(parsed.data.date);
+  if (parsed.data.date !== undefined) existing.date = new Date(parsed.data.date);
 
   await existing.save();
   return NextResponse.json(existing);
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+/** DELETE - 削除 */
+export async function DELETE(_req: Request, context: RouteContext) {
   const token = await getServerToken(_req);
-  if (!token?.sub)
+  if (!token?.sub) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const id = await resolveIdFromContext(context);
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   await connectToDatabase();
-  const existing = await Log.findById(params.id);
-  if (!existing || existing.userId !== token.sub)
+  const existing = await Log.findById(id);
+  if (!existing || existing.userId !== token.sub) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
-  await Log.findByIdAndDelete(params.id);
+  await Log.findByIdAndDelete(id);
   return NextResponse.json({ message: 'Deleted' });
 }
