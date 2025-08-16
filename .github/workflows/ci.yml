@@ -37,7 +37,6 @@ jobs:
         env:
           CI: true
         run: |
-          # 推奨: package.json に "test:ci" を用意しておく
           if npm run | grep -q "test:ci"; then
             npm run test:ci
           else
