@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Test & Build
+    name: Test, Typecheck & Build
     runs-on: ubuntu-latest
     env:
       MONGODB_URI: ${{ secrets.MONGODB_URI }}
@@ -29,6 +29,15 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
+      - name: Debug env presence
+        run: |
+          echo "----- DEBUG: env presence (will not print secret values) -----"
+          echo "MONGODB_URI: ${MONGODB_URI:+SET}"
+          echo "NEXTAUTH_URL: ${NEXTAUTH_URL:+SET}"
+          echo "NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:+SET}"
+          echo "NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:+SET}"
+          echo "-------------------------------------------------------------"
+
       - name: Install dependencies
         run: npm ci
 
@@ -42,6 +51,7 @@ jobs:
         env:
           CI: true
         run: |
+          # 推奨: package.json に "test:ci" を用意しておくと安定
           if npm run | grep -q "test:ci"; then
             npm run test:ci
           else
