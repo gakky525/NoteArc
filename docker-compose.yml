@@ -16,6 +16,7 @@ services:
       - NEXTAUTH_URL=http://localhost:3000
     depends_on:
       - mongo
+    command: ['npm', 'run', 'dev']
 
   mongo:
     image: mongo:6.0
