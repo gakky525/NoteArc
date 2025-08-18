@@ -4,17 +4,20 @@ import { Log } from '@/models/Log';
 import { notFound } from 'next/navigation';
 
 type PageProps = {
-  params: { id: string } | Promise<{ id: string }>;
+  params?: Promise<{ id: string }>;
 };
 
 export default async function EditLogPage({ params }: PageProps) {
-  const { id } = (await params) as { id: string };
+  const resolved = await params;
+  const id = resolved?.id;
+  if (!id) {
+    notFound(); // id が無ければ 404
+  }
 
   await connectToDatabase();
   const log = await Log.findById(id).lean();
 
   if (!log) {
-    // 存在しなければnotFound（404ページ）へ
     notFound();
   }
 
@@ -22,9 +25,10 @@ export default async function EditLogPage({ params }: PageProps) {
     _id: log._id.toString(),
     title: log.title,
     content: log.content,
-    date: log.date
-      ? new Date(log.date).toISOString()
-      : new Date().toISOString(),
+    date:
+      log.date instanceof Date
+        ? log.date.toISOString()
+        : new Date(log.date ?? Date.now()).toISOString(),
     tags: Array.isArray(log.tags) ? log.tags : [],
   };
 
