@@ -41,6 +41,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Debug secret presence (no values printed)
+        run: |
+          if [ -n "$MONGODB_URI" ]; then echo "MONGODB_URI is SET"; else echo "MONGODB_URI is EMPTY"; fi
+          if [ -n "$NEXTAUTH_SECRET" ]; then echo "NEXTAUTH_SECRET is SET"; else echo "NEXTAUTH_SECRET is EMPTY"; fi
+          if [ -n "$NEXTAUTH_URL" ]; then echo "NEXTAUTH_URL is SET"; else echo "NEXTAUTH_URL is EMPTY"; fi
+          if [ -n "$NEXT_PUBLIC_SITE_URL" ]; then echo "NEXT_PUBLIC_SITE_URL is SET"; else echo "NEXT_PUBLIC_SITE_URL is EMPTY"; fi
+
       - name: Run lint (if configured)
         run: npm run lint || echo "lint script not found or failed; continuing"
 
