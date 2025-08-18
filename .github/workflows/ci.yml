@@ -29,24 +29,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Debug env presence
-        run: |
-          echo "----- DEBUG: env presence (will not print secret values) -----"
-          echo "MONGODB_URI: ${MONGODB_URI:+SET}"
-          echo "NEXTAUTH_URL: ${NEXTAUTH_URL:+SET}"
-          echo "NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:+SET}"
-          echo "NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:+SET}"
-          echo "-------------------------------------------------------------"
-
       - name: Install dependencies
         run: npm ci
-
-      - name: Debug secret presence (no values printed)
-        run: |
-          if [ -n "$MONGODB_URI" ]; then echo "MONGODB_URI is SET"; else echo "MONGODB_URI is EMPTY"; fi
-          if [ -n "$NEXTAUTH_SECRET" ]; then echo "NEXTAUTH_SECRET is SET"; else echo "NEXTAUTH_SECRET is EMPTY"; fi
-          if [ -n "$NEXTAUTH_URL" ]; then echo "NEXTAUTH_URL is SET"; else echo "NEXTAUTH_URL is EMPTY"; fi
-          if [ -n "$NEXT_PUBLIC_SITE_URL" ]; then echo "NEXT_PUBLIC_SITE_URL is SET"; else echo "NEXT_PUBLIC_SITE_URL is EMPTY"; fi
 
       - name: Run lint (if configured)
         run: npm run lint || echo "lint script not found or failed; continuing"
