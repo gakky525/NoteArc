@@ -47,49 +47,68 @@ jobs:
       - name: Build (production)
         run: npm run build
 
-      - name: Trigger Render deploy (create a new deploy via API)
+      - name: Trigger & wait Render deploy (robust)
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
-          echo "Triggering render deploy for service $RENDER_SERVICE_ID..."
+          set -euo pipefail
+
+          # ensure jq available
+          if ! command -v jq >/dev/null 2>&1; then
+            echo "Installing jq..."
+            sudo apt-get update -y
+            sudo apt-get install -y jq
+          fi
+
+          echo "Triggering deploy for service: ${RENDER_SERVICE_ID}"
           resp=$(curl -sS -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
             -H "Authorization: Bearer ${RENDER_API_KEY}" \
             -H "Content-Type: application/json" \
-            -d '{}')
-          echo "Render response: $resp"
-          # optional: fail if API returns an error object
-          echo "$resp" | jq -e '.id // .serviceId' >/dev/null || (echo "Render deploy failed" >&2; echo "$resp" >&2; exit 1)
+            -d '{}' ) || true
 
-      - name: Wait for Render deploy to finish (poll)
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
-        run: |
-          echo "Polling Render to wait for deploy to finish..."
-          deploy_id=$(curl -sS -X GET "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
-            -H "Authorization: Bearer ${RENDER_API_KEY}" | jq -r '.[0].id')
-          if [ -z "$deploy_id" ] || [ "$deploy_id" = "null" ]; then
-            echo "Could not find latest deploy id" >&2
+          echo "Render POST response:"
+          echo "$resp"
+
+          deployId=$(echo "$resp" | jq -r '.id // empty')
+          if [ -z "$deployId" ]; then
+            # try alternate fields for older api responses
+            deployId=$(echo "$resp" | jq -r '.serviceId // empty')
+          fi
+
+          if [ -z "$deployId" ]; then
+            echo "ERROR: deploy id not found in response above. Exiting."
             exit 1
           fi
-          echo "Latest deploy id: $deploy_id"
-          # Poll status until success or failure
-          for i in $(seq 1 60); do
-            status=$(curl -sS -X GET "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys/${deploy_id}" \
-              -H "Authorization: Bearer ${RENDER_API_KEY}" | jq -r '.state')
-            echo "Status: $status"
-            if [ "$status" = "live" ]; then
-              echo "Deploy succeeded"
+
+          echo "Deploy id: $deployId"
+
+          # Polling loop (adjust timeout as needed)
+          for i in $(seq 1 120); do
+            statusResp=$(curl -sS -H "Authorization: Bearer ${RENDER_API_KEY}" \
+              "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys/${deployId}") || true
+            echo "statusResp: $statusResp"
+            # Render may use 'state' or 'status' fields; check both
+            state=$(echo "$statusResp" | jq -r '.state // empty')
+            status=$(echo "$statusResp" | jq -r '.status // empty')
+            echo "Poll #$i state=$state status=$status"
+
+            # success conditions (cover common values)
+            if [ "$state" = "succeeded" ] || [ "$state" = "live" ] || [ "$status" = "succeeded" ] || [ "$status" = "live" ]; then
+              echo "Deploy succeeded (state=$state status=$status)"
               exit 0
             fi
-            if [ "$status" = "failed" ] || [ "$status" = "cancelled" ]; then
-              echo "Deploy failed (status=$status)" >&2
-              curl -sS -X GET "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys/${deploy_id}" \
-                -H "Authorization: Bearer ${RENDER_API_KEY}" | jq -C .
+
+            # failure conditions
+            if [ "$state" = "failed" ] || [ "$state" = "cancelled" ] || [ "$status" = "failed" ] || [ "$status" = "cancelled" ]; then
+              echo "Deploy failed (state=$state status=$status)"
+              echo "Full deploy object:"
+              echo "$statusResp" | jq .
               exit 1
             fi
+
             sleep 5
           done
-          echo "Deploy did not complete within timeout" >&2
+
+          echo "Timed out waiting for deploy to finish"
           exit 1
