@@ -3,7 +3,7 @@ import './globals.css';
 import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
-  title: 'Learning-Log',
+  title: 'NoteArc',
   description: 'メモ帳感覚で使える学習ログアプリ',
 };
 
@@ -13,10 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='ja'>
-      <body className='min-h-screen bg-gray-50 text-gray-800'>
+    <html lang="ja">
+      <body className="min-h-screen bg-gray-50 text-gray-800">
         <Providers>
-          <main className='max-w-4xl mx-auto px-4 py-8'>{children}</main>
+          <main className="max-w-4xl mx-auto px-4 py-8">{children}</main>
         </Providers>
       </body>
     </html>
