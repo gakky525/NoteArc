@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const DEFAULT_LOCAL_URI = 'mongodb://mongo:27017/notearc';
+const DEFAULT_LOCAL_URI = 'mongodb://mongo:27017/notearc-dev';
 const MONGODB_URI = process.env.MONGODB_URI ?? DEFAULT_LOCAL_URI;
 
 if (!MONGODB_URI) {
