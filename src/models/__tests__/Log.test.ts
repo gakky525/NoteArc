@@ -1,9 +1,6 @@
 import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 // import mongoose from 'mongoose';
-import {
-  setupMongoMemoryServer,
-  teardownMongoMemoryServer,
-} from '@/test/setupMongo';
+import { setupMongoMemoryServer, teardownMongoMemoryServer } from '@/test/setupMongo';
 import { Log } from '@/models/Log';
 
 describe('Log model', () => {

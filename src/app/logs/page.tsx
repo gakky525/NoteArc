@@ -1,11 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import LogModal, { LogType } from '@/components/LogModal';
+import LogModal, { type LogType } from '@/components/LogModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { getGuestDrafts, removeGuestDraft } from '@/lib/guestStorage';
+
+type ServerLogShape = {
+  _id?: string;
+  id?: string;
+  title: string;
+  content: string;
+  date: string;
+  tags?: string[];
+};
 
 export default function LogsPage() {
   const { data: session, status } = useSession();
@@ -16,67 +26,93 @@ export default function LogsPage() {
   const [query, setQuery] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // modal state
   const [selectedLog, setSelectedLog] = useState<LogType | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // ConfirmDialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTargetId, setConfirmTargetId] = useState<string | null>(null);
+
+  const clientGuestFlag =
+    typeof window !== 'undefined' && localStorage.getItem('guest_access') === 'true';
+  const isAuthenticated = status === 'authenticated' && !!session;
+  const isGuestViewing = !isAuthenticated && clientGuestFlag;
+
+  function normalizeServerLog(item: ServerLogShape): LogType {
+    const id = item._id ?? item.id ?? '';
+    return {
+      _id: id,
+      title: item.title,
+      content: item.content,
+      date: item.date ?? new Date().toISOString(),
+      tags: item.tags ?? [],
+    };
+  }
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetch('/api/logs')
-      .then(res => res.json())
-      .then((data: LogType[]) => {
+
+    async function loadFromServer() {
+      try {
+        const res = await fetch('/api/logs');
         if (!mounted) return;
-        setLogs(data || []);
-      })
-      .catch(e => {
-        console.error(e);
+        if (res.status === 401) {
+          loadFromGuest();
+          return;
+        }
+        if (!res.ok) {
+          console.warn('failed to fetch logs:', res.status);
+          loadFromGuest();
+          return;
+        }
+        const data = (await res.json()) as ServerLogShape[] | { error?: string };
+        if (!Array.isArray(data)) {
+          loadFromGuest();
+          return;
+        }
+        const mapped = data.map(normalizeServerLog);
+        setLogs(mapped);
+      } catch (err) {
+        console.error('fetch logs error', err);
+        loadFromGuest();
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    function loadFromGuest() {
+      try {
+        const drafts = getGuestDrafts();
+        const mapped: LogType[] = drafts.map(d => ({
+          _id: d.tempId,
+          title: d.title ?? 'Untitled',
+          content: d.content ?? '',
+          date: d.updatedAt ?? d.createdAt ?? new Date().toISOString(),
+          tags: d.tags ?? [],
+          _isGuest: true,
+        }));
+        setLogs(mapped);
+      } catch (e) {
+        console.warn('failed to load guest drafts', e);
         setLogs([]);
-      })
-      .finally(() => mounted && setLoading(false));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    if (isAuthenticated) {
+      loadFromServer();
+    } else if (isGuestViewing) {
+      loadFromGuest();
+    } else {
+      loadFromServer();
+    }
+
     return () => {
       mounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const params = new URLSearchParams(window.location.search);
-    const openId = params.get('open');
-    if (!openId) return;
-
-    const found = logs.find(l => l._id === openId);
-    if (found) {
-      setSelectedLog(found);
-      setModalOpen(true);
-      return;
-    }
-
-    // ログリストにまだ無い場合は API から取得する
-    (async () => {
-      try {
-        const res = await fetch(`/api/logs/${openId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const fetched: LogType = {
-          _id: data._id ?? data.id,
-          title: data.title,
-          content: data.content,
-          date: data.date,
-          tags: data.tags ?? [],
-        };
-        setSelectedLog(fetched);
-        setModalOpen(true);
-      } catch (err) {
-        console.error('failed to fetch single log for open param', err);
-      }
-    })();
-  }, [logs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, clientGuestFlag]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -88,6 +124,58 @@ export default function LogsPage() {
     });
   }, [logs, query]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const openId = params.get('open');
+    if (!openId) return;
+
+    const found = logs.find(l => l._id === openId);
+    if (found) {
+      setSelectedLog(found);
+      setModalOpen(true);
+      return;
+    }
+
+    if (isGuestViewing) {
+      const drafts = getGuestDrafts();
+      const g = drafts.find(d => d.tempId === openId);
+      if (g) {
+        setSelectedLog({
+          _id: g.tempId,
+          title: g.title ?? 'Untitled',
+          content: g.content ?? '',
+          date: g.updatedAt ?? g.createdAt ?? new Date().toISOString(),
+          tags: g.tags ?? [],
+          _isGuest: true,
+        });
+        setModalOpen(true);
+        return;
+      }
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/logs/${openId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const fetched: LogType = {
+          _id: data._id ?? data.id,
+          title: data.title,
+          content: data.content,
+          date: data.date ?? new Date().toISOString(),
+          tags: data.tags ?? [],
+        };
+        setSelectedLog(fetched);
+        setModalOpen(true);
+      } catch (err) {
+        console.error('failed to fetch single log', err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logs, status, clientGuestFlag]);
+
   const openLog = (log: LogType) => {
     // URL に反映してモーダルを開く
     router.replace(`/logs?open=${log._id}`);
@@ -97,10 +185,33 @@ export default function LogsPage() {
 
   const doDelete = async (id: string) => {
     setDeletingId(id);
+
+    const found = logs.find(l => l._id === id);
+    const isGuestDraft = found?._isGuest === true;
+
     try {
-      const res = await fetch(`/api/logs/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('削除失敗');
-      setLogs(prev => prev.filter(l => l._id !== id));
+      if (isGuestDraft && !isAuthenticated) {
+        try {
+          removeGuestDraft(id);
+        } catch (e) {
+          console.warn('removeGuestDraft failed', e);
+        }
+        setLogs(prev => prev.filter(l => l._id !== id));
+      } else {
+        const res = await fetch(`/api/logs/${id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          if (res.status === 401) {
+            // 認証情報が無いまたは無効（セッション有効期限切れ等）の時に削除しようとした時に表示
+            alert('この操作をするにはログインが必要です。ログインページに移動します。');
+            router.push('/login');
+          } else {
+            throw new Error('削除に失敗しました');
+          }
+          return;
+        }
+        setLogs(prev => prev.filter(l => l._id !== id));
+      }
+
       if (modalOpen) {
         setModalOpen(false);
         setSelectedLog(null);
@@ -119,16 +230,6 @@ export default function LogsPage() {
     setConfirmOpen(true);
   };
 
-  // 認証されていない場合のガード
-  useEffect(() => {
-    if (status === 'loading') return;
-    const isGuest =
-      typeof window !== 'undefined' && localStorage.getItem('guest_access') === 'true';
-    if (!session && !isGuest) {
-      router.replace('/login');
-    }
-  }, [session, status, router]);
-
   function handleCloseModal() {
     setModalOpen(false);
     setSelectedLog(null);
@@ -137,20 +238,75 @@ export default function LogsPage() {
 
   return (
     <div>
-      {session && (
-        <header className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">
-            {session.user?.name ? `${session.user.name}さんの学習ログ` : '学習ログ'}
-          </h1>
-          <div className="flex items-center gap-3">
+      <header className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">
+          {isAuthenticated
+            ? session.user?.name
+              ? `${session.user.name}さんの学習ログ`
+              : '学習ログ'
+            : isGuestViewing
+            ? 'ゲスト'
+            : '学習ログ'}
+        </h1>
+
+        <div className="flex items-center gap-3">
+          {isAuthenticated ? (
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="px-3 py-1 bg-red-600 text-white rounded-md"
+              onClick={async () => {
+                if (typeof window !== 'undefined') {
+                  try {
+                    localStorage.removeItem('guest_access');
+                  } catch (e) {
+                    console.warn('failed to remove guest_access', e);
+                  }
+                }
+
+                // next-auth にサインアウトを実行させ、完了後にトップへリダイレクト
+                const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                signOut({ callbackUrl: `${origin}/` });
+              }}
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md cursor-pointer"
             >
               Sign out
             </button>
-          </div>
-        </header>
+          ) : isGuestViewing ? (
+            <>
+              <Link href="/login" className="px-3 py-1 border rounded-md text-sm hover:bg-gray-200">
+                ログイン
+              </Link>
+              <Link
+                href="/register"
+                className="px-3 py-1 border-black bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
+              >
+                新規登録
+              </Link>
+            </>
+          ) : (
+            // ログインもゲストでもない場合にログイン/登録を表示
+            <>
+              <Link href="/login" className="px-3 py-1 border rounded-md text-sm hover:bg-gray-200">
+                ログイン
+              </Link>
+              <Link
+                href="/register"
+                className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+              >
+                新規登録
+              </Link>
+            </>
+          )}
+        </div>
+      </header>
+
+      {/* ゲスト画面での注意メッセージ */}
+      {isGuestViewing && (
+        <div className="mb-4 p-4 rounded-md bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">
+          ログインしていない場合データが失われる可能性があります。保存するには
+          <Link href="/register" className="underline ml-1 font-medium text-red-500">
+            新規登録
+          </Link>
+          してください。
+        </div>
       )}
 
       <div className="mb-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
@@ -166,7 +322,7 @@ export default function LogsPage() {
         <div className="flex gap-2">
           <button
             onClick={() => router.push('/logs/new')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer"
           >
             新規作成
           </button>

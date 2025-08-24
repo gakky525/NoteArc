@@ -8,6 +8,7 @@ export interface ILog extends Document {
   userId: string;
   createdAt?: Date;
   updatedAt?: Date;
+  guestTempId?: string;
 }
 
 const LogSchema = new Schema<ILog>(
@@ -17,12 +18,12 @@ const LogSchema = new Schema<ILog>(
     date: { type: Date, default: Date.now },
     tags: [{ type: String }],
     userId: { type: String, required: true, index: true },
+    guestTempId: { type: String, required: false, index: true },
   },
   { timestamps: true }
 );
 
 const Log: Model<ILog> =
-  (mongoose.models.Log as Model<ILog>) ||
-  mongoose.model<ILog>('Log', LogSchema);
+  (mongoose.models.Log as Model<ILog>) || mongoose.model<ILog>('Log', LogSchema);
 
 export { Log };

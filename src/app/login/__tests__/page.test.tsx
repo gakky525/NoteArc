@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import LoginPage from './page';
+import LoginPage from '../page';
 
 // next-auth と next/navigation はテストではモックしておく
 vi.mock('next-auth/react', () => {
@@ -24,8 +24,6 @@ describe('LoginPage', () => {
 
     expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /ログイン/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument();
   });
 });
