@@ -1,4 +1,3 @@
-// src/app/logs/__tests__/new.page.test.tsx
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
@@ -6,16 +5,13 @@ import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
 let mockSessionData: unknown = null;
 let mockSessionStatus: 'loading' | 'authenticated' | 'unauthenticated' = 'unauthenticated';
 
-// mock next-auth useSession
 vi.mock('next-auth/react', () => ({
   useSession: () => ({ data: mockSessionData, status: mockSessionStatus }),
 }));
 
-// mock router
 const pushMock = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pushMock }) }));
 
-// mock guestStorage.createGuestDraft
 const createGuestDraftMock = vi.fn();
 vi.mock('@/lib/guestStorage', () => ({
   createGuestDraft: (p: unknown) => createGuestDraftMock(p),
@@ -29,8 +25,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  // If global.fetch was replaced by a mock with mockRestore, call it.
-  // Use a safe runtime check to avoid TypeScript ignore pragmas.
   const gf = global.fetch as unknown as { mockRestore?: () => void } | undefined;
   if (gf && typeof gf.mockRestore === 'function') {
     gf.mockRestore();
@@ -82,7 +76,6 @@ describe('NewLogPage', () => {
   });
 
   it('not guest and not auth -> auto guest save (or confirm flow) -> navigate', async () => {
-    // ensure guest flag not set
     localStorage.removeItem('guest_access');
     mockSessionData = null;
     mockSessionStatus = 'unauthenticated';
@@ -92,7 +85,6 @@ describe('NewLogPage', () => {
     fireEvent.change(getByPlaceholderText('タイトルを入力'), { target: { value: 'Q' } });
     fireEvent.change(getByPlaceholderText('本文...'), { target: { value: 'R' } });
 
-    // If your app still uses window.confirm, spy on it and return true.
     const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true);
 
     try {

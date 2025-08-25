@@ -1,4 +1,3 @@
-// src/app/api/guest/merge/__tests__/route.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.resetModules();
@@ -26,7 +25,6 @@ describe('POST /api/guest/merge', () => {
   }
 
   it('returns 401 when not authenticated', async () => {
-    // prepare mocks BEFORE importing the route module
     vi.doMock('next-auth', () => ({
       getServerSession: (...args: unknown[]) => getServerSessionMock(...(args as unknown[])),
     }));

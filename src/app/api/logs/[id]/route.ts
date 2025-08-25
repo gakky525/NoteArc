@@ -4,12 +4,17 @@ import { Log } from '@/models/Log';
 import { z } from 'zod';
 import { getServerToken } from '@/lib/auth';
 
-const updateSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
-  content: z.string().min(1).optional(),
-  tags: z.array(z.string()).optional(),
-  date: z.string().optional(),
-});
+const updateSchema = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    content: z.string().min(1).optional(),
+    tags: z.array(z.string()).optional(),
+    date: z.string().optional(),
+  })
+  // 空オブジェクトを無効にする（少なくとも 1 フィールドが必要）
+  .refine(obj => Object.keys(obj).length > 0, {
+    message: 'At least one field must be provided',
+  });
 
 async function resolveIdFromContext(context?: unknown): Promise<string | undefined> {
   if (!context) return undefined;
@@ -17,9 +22,8 @@ async function resolveIdFromContext(context?: unknown): Promise<string | undefin
   const maybeParams = (context as { params?: unknown }).params;
   if (maybeParams === undefined) return undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const params = await Promise.resolve(maybeParams as any);
-  return params?.id as string | undefined;
+  const paramsObj = (await Promise.resolve(maybeParams)) as { id?: string } | undefined;
+  return paramsObj?.id;
 }
 
 // GET
@@ -52,6 +56,7 @@ export async function PUT(req: Request, context?: unknown) {
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const body = await req.json().catch(() => ({}));
+
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

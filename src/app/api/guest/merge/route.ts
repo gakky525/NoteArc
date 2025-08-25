@@ -1,4 +1,3 @@
-// src/app/api/guest/merge/route.ts
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
@@ -30,7 +29,6 @@ type BulkDoc = {
   guestTempId: string;
 };
 
-/** Request-like 判定 */
 function isRequestLike(obj: unknown): obj is { json: () => Promise<unknown> } {
   return (
     typeof obj === 'object' &&
@@ -40,14 +38,10 @@ function isRequestLike(obj: unknown): obj is { json: () => Promise<unknown> } {
   );
 }
 
-/**
- * セッションオブジェクトの色々な形から user id を抽出するユーティリティ
- */
 function extractUserIdFromSession(s: unknown): string | null {
   if (s == null || typeof s !== 'object') return null;
   const obj = s as Record<string, unknown>;
 
-  // session.user.id などの一般的な形
   if ('user' in obj && obj.user && typeof obj.user === 'object') {
     const user = obj.user as Record<string, unknown>;
     const uId = user.id ?? user._id ?? user.userId ?? user.sub;
@@ -55,7 +49,6 @@ function extractUserIdFromSession(s: unknown): string | null {
     if (typeof uId === 'number') return String(uId);
   }
 
-  // top-level に id / _id / sub がある場合
   const topId = obj.id ?? obj._id ?? obj.sub;
   if (typeof topId === 'string') return topId;
   if (typeof topId === 'number') return String(topId);
@@ -65,7 +58,6 @@ function extractUserIdFromSession(s: unknown): string | null {
 
 export async function POST(req: Request) {
   try {
-    // getServerSession は環境により例外を投げる可能性あり -> 安全に扱う
     let rawSession: unknown = null;
     try {
       rawSession = await getServerSession(authOptions);
@@ -79,12 +71,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Request-like オブジェクトから body を安全に取り出す
     let rawBody: unknown = null;
     if (isRequestLike(req)) {
       rawBody = await req.json().catch(() => null);
     } else {
-      // Request-like でなければ body を取得できない想定（テストで軽量オブジェクトを渡す場合は isRequestLike が true になる）
       rawBody = null;
     }
 
@@ -124,7 +114,6 @@ export async function POST(req: Request) {
     });
 
     if (ops.length > 0) {
-      // Log.collection が存在し bulkWrite を提供しているか確認してから実行
       const logModelLike = Log as unknown as { collection?: Partial<Collection<BulkDoc>> };
       const collection = logModelLike.collection;
       if (!collection || typeof collection.bulkWrite !== 'function') {

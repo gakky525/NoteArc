@@ -1,4 +1,3 @@
-// src/app/logs/__tests__/page.test.tsx
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { vi, beforeEach, describe, it, expect } from 'vitest';
@@ -30,10 +29,8 @@ import LogsPage from '@/app/logs/page';
 
 describe('LogsPage (guest vs auth)', () => {
   it('server returns 401 -> falls back to guest drafts', async () => {
-    // server returns 401: fetch called by component should be stubbed
     global.fetch = vi.fn(() => Promise.resolve({ ok: false, status: 401 } as unknown as Response));
 
-    // prepare guest drafts
     getGuestDraftsMock.mockReturnValue([
       {
         tempId: 'g1',
@@ -44,7 +41,6 @@ describe('LogsPage (guest vs auth)', () => {
         updatedAt: new Date().toISOString(),
       },
     ]);
-    // set guest flag so it uses guest view
     localStorage.setItem('guest_access', 'true');
 
     const { getByText } = render(<LogsPage />);
@@ -64,7 +60,6 @@ describe('LogsPage (guest vs auth)', () => {
 
     await waitFor(() => expect(getByText('t')).toBeTruthy());
 
-    // removeGuestDraftMock should not have been called yet (no delete triggered in this test)
     expect(removeGuestDraftMock).not.toHaveBeenCalled();
   });
 });
