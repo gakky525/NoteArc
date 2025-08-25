@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.resetModules();
 
 describe('src/app/api/register/route', () => {
-  let findUserByEmailMock: (email: string) => Promise<unknown | null>;
-  let createUserMock: (email: string, password: string, name?: string) => Promise<void>;
+  let findUserByEmailMock: ReturnType<typeof vi.fn>;
+  let createUserMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -14,14 +14,18 @@ describe('src/app/api/register/route', () => {
   });
 
   it('POST returns 400 when missing fields', async () => {
-    vi.doMock('@/auth', () => ({
-      findUserByEmail: (e: string) => findUserByEmailMock(e),
-      createUser: (e: string, p: string, n?: string) => createUserMock(e, p, n),
+    vi.doMock('@/lib/authUser', () => ({
+      findUserByEmail: (...args: unknown[]) => findUserByEmailMock(...(args as unknown[])),
+      createUser: (...args: unknown[]) => createUserMock(...(args as unknown[])),
     }));
+
     const Route = await import('@/app/api/register/route');
-    const res = await Route.POST(
-      new Request('http://localhost', { method: 'POST', body: JSON.stringify({}) })
-    );
+
+    const reqLike = {
+      json: async () => ({}),
+    } as unknown as Request;
+
+    const res = await Route.POST(reqLike);
     const status =
       res && typeof res === 'object' && 'status' in res
         ? (res as { status: number }).status
@@ -30,20 +34,20 @@ describe('src/app/api/register/route', () => {
   });
 
   it('POST returns 409 when user exists', async () => {
-    vi.doMock('@/auth', () => ({
-      findUserByEmail: (email: string) => findUserByEmailMock(email),
-      createUser: (e: string, p: string, n?: string) => createUserMock(e, p, n),
+    findUserByEmailMock.mockResolvedValueOnce({ email: 'x' });
+
+    vi.doMock('@/lib/authUser', () => ({
+      findUserByEmail: (...args: unknown[]) => findUserByEmailMock(...(args as unknown[])),
+      createUser: (...args: unknown[]) => createUserMock(...(args as unknown[])),
     }));
-    (findUserByEmailMock as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      email: 'x',
-    });
+
     const Route = await import('@/app/api/register/route');
-    const res = await Route.POST(
-      new Request('http://localhost', {
-        method: 'POST',
-        body: JSON.stringify({ email: 'a@x', password: 'pass' }),
-      })
-    );
+
+    const reqLike = {
+      json: async () => ({ email: 'a@x', password: 'pass' }),
+    } as unknown as Request;
+
+    const res = await Route.POST(reqLike);
     const status =
       res && typeof res === 'object' && 'status' in res
         ? (res as { status: number }).status
@@ -52,42 +56,47 @@ describe('src/app/api/register/route', () => {
   });
 
   it('POST returns 201 when created', async () => {
-    vi.doMock('@/auth', () => ({
-      findUserByEmail: (email: string) => findUserByEmailMock(email),
-      createUser: (e: string, p: string, n?: string) => createUserMock(e, p, n),
+    findUserByEmailMock.mockResolvedValueOnce(null);
+    createUserMock.mockResolvedValueOnce({ email: 'new@example.com', name: 'New' });
+
+    vi.doMock('@/lib/authUser', () => ({
+      findUserByEmail: (...args: unknown[]) => findUserByEmailMock(...(args as unknown[])),
+      createUser: (...args: unknown[]) => createUserMock(...(args as unknown[])),
     }));
-    (findUserByEmailMock as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
-    (createUserMock as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
+
     const Route = await import('@/app/api/register/route');
-    const res = await Route.POST(
-      new Request('http://localhost', {
-        method: 'POST',
-        body: JSON.stringify({ email: 'a@x', password: 'pass', name: 'n' }),
-      })
-    );
+
+    const reqLike = {
+      json: async () => ({ email: 'new@example.com', password: 'pw123', name: 'New' }),
+    } as unknown as Request;
+
+    const res = await Route.POST(reqLike);
     const status =
       res && typeof res === 'object' && 'status' in res
         ? (res as { status: number }).status
         : undefined;
+
     expect(status).toBe(201);
+    expect(createUserMock).toHaveBeenCalledWith('new@example.com', 'pw123', 'New');
   });
 
   it('POST returns 500 on exception', async () => {
-    vi.doMock('@/auth', () => ({
-      findUserByEmail: (email: string) => findUserByEmailMock(email),
-      createUser: (e: string, p: string, n?: string) => createUserMock(e, p, n),
+    findUserByEmailMock.mockImplementationOnce(() => {
+      throw new Error('fail');
+    });
+
+    vi.doMock('@/lib/authUser', () => ({
+      findUserByEmail: (...args: unknown[]) => findUserByEmailMock(...(args as unknown[])),
+      createUser: (...args: unknown[]) => createUserMock(...(args as unknown[])),
     }));
-    (findUserByEmailMock as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
-    (createUserMock as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-      new Error('fail')
-    );
+
     const Route = await import('@/app/api/register/route');
-    const res = await Route.POST(
-      new Request('http://localhost', {
-        method: 'POST',
-        body: JSON.stringify({ email: 'a@x', password: 'pass', name: 'n' }),
-      })
-    );
+
+    const reqLike = {
+      json: async () => ({ email: 'a@x', password: 'pass', name: 'n' }),
+    } as unknown as Request;
+
+    const res = await Route.POST(reqLike);
     const status =
       res && typeof res === 'object' && 'status' in res
         ? (res as { status: number }).status
