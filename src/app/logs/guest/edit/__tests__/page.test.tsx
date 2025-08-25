@@ -1,4 +1,3 @@
-// src/app/logs/guest/edit/__tests__/page.test.tsx
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { vi, beforeEach, describe, it, expect } from 'vitest';
