@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-// import { z } from 'zod';
-import { registerSchema } from '@/lib/validators/auth';
+import { registerSchema } from '@/lib/authValidator';
 
 describe('registerSchema', () => {
   it('accepts valid input', () => {

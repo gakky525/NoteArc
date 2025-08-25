@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createUser, findUserByEmail } from '@/auth';
+import { createUser, findUserByEmail } from '@/lib/authUser';
 
 export async function POST(req: Request) {
   try {
@@ -10,18 +10,12 @@ export async function POST(req: Request) {
     };
     const { email, password, name } = body;
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'email and password required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'email and password required' }, { status: 400 });
     }
 
     const existing = await findUserByEmail(email);
     if (existing) {
-      return NextResponse.json(
-        { error: 'User already exists' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
     }
 
     await createUser(email, password, name);
