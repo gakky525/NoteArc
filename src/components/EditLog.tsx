@@ -2,15 +2,17 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import ConfirmDialog from './ConfirmDialog';
 import { getGuestDrafts, saveGuestDraft, removeGuestDraft } from '@/lib/guestStorage';
 
-type Log = {
+type LogType = {
   _id: string;
   title: string;
   content: string;
   date: string;
   tags: string[];
+  format?: 'plain' | 'markdown';
   _isGuest?: boolean;
 };
 
@@ -21,12 +23,13 @@ function parseTags(text: string): string[] {
     .filter(Boolean);
 }
 
-export default function EditLog({ log }: { log: Log }) {
+export default function EditLog({ log }: { log: LogType }) {
   const router = useRouter();
 
   const [title, setTitle] = useState(log.title);
   const [content, setContent] = useState(log.content);
   const [tagsText, setTagsText] = useState((log.tags || []).join(', '));
+  const [format, setFormat] = useState<'plain' | 'markdown'>(log.format ?? 'plain');
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -69,6 +72,7 @@ export default function EditLog({ log }: { log: Log }) {
           tags: parseTags(tagsText),
           createdAt,
           updatedAt: now,
+          format,
         });
       } catch (e) {
         console.warn('auto save failed', e);
@@ -80,7 +84,14 @@ export default function EditLog({ log }: { log: Log }) {
         window.clearTimeout(saveTimerRef.current);
       }
     };
-  }, [title, content, tagsText, tempId]);
+  }, [title, content, tagsText, tempId, format]);
+
+  // フォーマットが plain に変わったらプレビューを自動で閉じる
+  useEffect(() => {
+    if (format !== 'markdown' && showPreview) {
+      setShowPreview(false);
+    }
+  }, [format, showPreview]);
 
   function handleRestoreDraft() {
     try {
@@ -93,6 +104,7 @@ export default function EditLog({ log }: { log: Log }) {
       if (found.title !== undefined) setTitle(found.title);
       if (found.content !== undefined) setContent(found.content);
       if (Array.isArray(found.tags)) setTagsText(found.tags.join(', '));
+      if (found.format) setFormat(found.format);
       setHasLocalDraft(false);
     } catch (e) {
       console.warn('restore failed', e);
@@ -115,6 +127,7 @@ export default function EditLog({ log }: { log: Log }) {
           tags,
           createdAt: getGuestDrafts().find(d => d.tempId === tempId)?.createdAt ?? now,
           updatedAt: now,
+          format,
         });
         router.push(`/logs?open=${tempId}`);
         return;
@@ -123,7 +136,7 @@ export default function EditLog({ log }: { log: Log }) {
       const res = await fetch(`/api/logs/${log._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content, tags }),
+        body: JSON.stringify({ title, content, tags, format }),
       });
 
       if (!res.ok) {
@@ -188,7 +201,6 @@ export default function EditLog({ log }: { log: Log }) {
     <main>
       <h1 className="text-2xl font-bold mb-4">ログ編集</h1>
 
-      {/* ローカルストレージに下書きが存在するのに現在表示されている初期ログと内容が異なる場合に表示 */}
       {hasLocalDraft && (
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
           <div className="flex items-center justify-between">
@@ -236,7 +248,31 @@ export default function EditLog({ log }: { log: Log }) {
           </div>
 
           <div>
-            <label className="block text-sm mb-1">内容（Markdown対応）</label>
+            <label className="block text-sm mb-1">記法</label>
+            <div className="flex gap-3 items-center mb-2">
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="format"
+                  value="plain"
+                  checked={format === 'plain'}
+                  onChange={() => setFormat('plain')}
+                />
+                <span>テキスト</span>
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="format"
+                  value="markdown"
+                  checked={format === 'markdown'}
+                  onChange={() => setFormat('markdown')}
+                />
+                <span>Markdown</span>
+              </label>
+            </div>
+
+            <label className="block text-sm mb-1">内容</label>
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
@@ -252,7 +288,7 @@ export default function EditLog({ log }: { log: Log }) {
               value={tagsText}
               onChange={e => setTagsText(e.target.value)}
               className="w-full rounded-md border px-3 py-2"
-              placeholder="nextjs, mongodb"
+              placeholder="タグ１, タグ２..."
             />
           </div>
 
@@ -274,30 +310,37 @@ export default function EditLog({ log }: { log: Log }) {
               削除
             </button>
 
-            <button type="button" onClick={handleCancel} className="px-4 py-2 border rounded-md">
+            <button type="button" onClick={handleCancel} className="px-3 py-1 border rounded-md">
               キャンセル
             </button>
 
-            <button
-              type="button"
-              onClick={() => setShowPreview(s => !s)}
-              className="px-3 py-1 border rounded-md"
-            >
-              {showPreview ? 'プレビューを隠す' : 'プレビューを表示'}
-            </button>
+            {/* プレビューボタン（Markdown 選択時のみ表示） */}
+            {format === 'markdown' && (
+              <button
+                type="button"
+                onClick={() => setShowPreview(s => !s)}
+                className="px-3 py-1 border rounded-md"
+              >
+                {showPreview ? 'プレビューを閉じる' : 'プレビューを表示'}
+              </button>
+            )}
           </div>
         </form>
 
-        {showPreview && (
+        {showPreview && format === 'markdown' && (
           <div className="bg-white rounded-lg p-6 shadow">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold">プレビュー</h2>
               <span className="text-sm text-gray-500">Markdown 表示</span>
             </div>
 
-            <article className="prose max-w-none">
-              <h3>{title || 'タイトルのプレビュー'}</h3>
-              <ReactMarkdown>{content || '内容のプレビュー（Markdown対応）'}</ReactMarkdown>
+            <article className="prose article-prose max-w-none">
+              <h3>{title || '（タイトル）'}</h3>
+
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content || '（Markdown本文）'}
+              </ReactMarkdown>
+
               <div className="mt-3">
                 {parseTags(tagsText).map(t => (
                   <span key={t} className="text-xs bg-gray-100 px-2 py-1 mr-2 rounded">

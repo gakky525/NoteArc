@@ -1,6 +1,6 @@
 import EditLog from '@/components/EditLog';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Log } from '@/models/Log';
+import { Log as LogModel } from '@/models/Log';
 import { notFound } from 'next/navigation';
 
 type PageProps = {
@@ -11,11 +11,11 @@ export default async function EditLogPage({ params }: PageProps) {
   const resolved = await params;
   const id = resolved?.id;
   if (!id) {
-    notFound(); // id が無ければ 404
+    notFound();
   }
 
   await connectToDatabase();
-  const log = await Log.findById(id).lean();
+  const log = await LogModel.findById(id).lean();
 
   if (!log) {
     notFound();
@@ -30,6 +30,8 @@ export default async function EditLogPage({ params }: PageProps) {
         ? log.date.toISOString()
         : new Date(log.date ?? Date.now()).toISOString(),
     tags: Array.isArray(log.tags) ? log.tags : [],
+    format: (log.format as 'plain' | 'markdown') ?? 'plain',
+    userId: typeof log.userId === 'string' ? log.userId : undefined,
   };
 
   return <EditLog log={serializedLog} />;

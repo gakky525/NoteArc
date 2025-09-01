@@ -1,1 +1,180 @@
 @import 'tailwindcss';
+
+.prose,
+.article-prose {
+  max-width: none; /* 幅制限しない */
+  color: #111827; /* テキスト色 */
+  line-height: 1.7;
+  font-weight: 400;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+/* 見出し */
+.prose h1,
+.article-prose h1 {
+  font-size: 1.875rem; /* 30px */
+  line-height: 1.15;
+  margin: 1.05rem 0 0.45rem 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: none; /* 大文字化されている場合を無効化 */
+}
+
+.prose h2,
+.article-prose h2 {
+  font-size: 1.5rem; /* 24px */
+  margin: 0.9rem 0 0.45rem 0;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.prose h3,
+.article-prose h3 {
+  font-size: 1.25rem; /* 20px */
+  margin: 0.8rem 0 0.4rem 0;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* 段落 */
+.prose p,
+.article-prose p {
+  margin: 0.6rem 0;
+  color: inherit;
+  line-height: 1.7;
+}
+
+/* リスト（丸・番号） */
+.prose ul,
+.article-prose ul {
+  list-style: disc;
+  margin: 0.6rem 0;
+  padding-left: 1.4rem; /* マーカーのスペース */
+}
+
+.prose ol,
+.article-prose ol {
+  list-style: decimal;
+  margin: 0.6rem 0;
+  padding-left: 1.6rem;
+}
+
+.prose li,
+.article-prose li {
+  margin: 0.25rem 0;
+  /* marker のスタイル（ブラウザ互換）*/
+}
+
+.prose ul li::marker,
+.article-prose ul li::marker {
+  font-weight: 600;
+  color: inherit;
+}
+
+/* テーブル */
+.prose table,
+.article-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  overflow: auto;
+  display: table;
+}
+
+.prose th,
+.article-prose th,
+.prose td,
+.article-prose td {
+  border: 1px solid #4b5563; /* 薄いグレーの罫線 */
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose thead th,
+.article-prose thead th {
+  background: #d3d3d3;
+  font-weight: 700;
+}
+
+/* ブロック引用 */
+.prose blockquote,
+.article-prose blockquote {
+  border-left: 4px solid #e5e7eb;
+  margin: 0.8rem 0;
+  padding-left: 1rem;
+  color: #4b5563;
+  background: rgba(229, 231, 235, 0.15);
+}
+
+/* コードブロック / インラインコード */
+.prose pre,
+.article-prose pre {
+  background: #0f172a; /* 濃い背景 */
+  color: #4682b4;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+  margin: 0.75rem 0;
+}
+
+.prose code,
+.article-prose code {
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
+  font-size: 0.92em;
+}
+
+/* 画像のレスポンシブ化 */
+.prose img,
+.article-prose img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* テーブルの横スクロール(狭い画面用) */
+.prose table,
+.article-prose table {
+  display: block;
+  width: 100%;
+  overflow: auto;
+}
+
+/* リンク */
+.prose a,
+.article-prose a {
+  color: #2563eb; /* 青系 */
+  text-decoration: underline; /* 下線 */
+  word-break: break-word; /* 長いURLも折り返す */
+  cursor: pointer;
+}
+
+.prose a:hover,
+.article-prose a:hover {
+  color: #1d4ed8; /* 濃い青 */
+}
+
+/* ダークモード（ブラウザ preference に依存） */
+/* @media (prefers-color-scheme: dark) {
+  .prose,
+  .article-prose {
+    color: #e6eef6;
+  }
+  .prose th,
+  .article-prose th,
+  .prose td,
+  .article-prose td {
+    border-color: #374151;
+  }
+  .prose thead th,
+  .article-prose thead th {
+    background: #111827;
+  }
+  .prose pre,
+  .article-prose pre {
+    background: #071024;
+  }
+} */

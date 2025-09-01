@@ -4,7 +4,7 @@ import { GuestDraft, saveGuestDraft } from '@/lib/guestStorage';
 
 type UseAutoSaveParams = {
   key?: string;
-  data: { title?: string; content?: string; tags?: string[] };
+  data: { title?: string; content?: string; tags?: string[]; format?: 'plain' | 'markdown' };
   delay?: number;
 };
 
@@ -27,6 +27,7 @@ export function useAutoSaveDraft({ key, data, delay = 600 }: UseAutoSaveParams) 
         title: data.title,
         content: data.content,
         tags: data.tags,
+        format: data.format ?? 'plain',
         createdAt: now,
         updatedAt: now,
       };
@@ -39,5 +40,5 @@ export function useAutoSaveDraft({ key, data, delay = 600 }: UseAutoSaveParams) 
 
     return () => clearTimeout(handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.title, data.content, JSON.stringify(data.tags)]);
+  }, [data.title, data.content, JSON.stringify(data.tags), data.format]);
 }
