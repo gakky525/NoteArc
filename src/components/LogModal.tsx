@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useRouter } from 'next/navigation';
 
 export type LogType = {
@@ -9,6 +10,7 @@ export type LogType = {
   content: string;
   date: string;
   tags: string[];
+  format?: 'plain' | 'markdown';
   _isGuest?: boolean;
 };
 
@@ -23,7 +25,8 @@ export default function LogModal({ log, open, onClose, onRequestDelete }: Props)
   const router = useRouter();
   if (!open || !log) return null;
 
-  const currentLog = log as LogType;
+  const currentLog = log;
+  const format = currentLog.format ?? 'plain';
 
   const handleEdit = () => {
     onClose();
@@ -90,8 +93,16 @@ export default function LogModal({ log, open, onClose, onRequestDelete }: Props)
           </div>
         </div>
 
-        <div className="p-6 prose max-w-none">
-          <ReactMarkdown>{currentLog.content || '*内容が空です*'}</ReactMarkdown>
+        <div className="p-6 max-w-none">
+          {format === 'markdown' ? (
+            <article className="prose article-prose max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {currentLog.content || '*内容が空です*'}
+              </ReactMarkdown>
+            </article>
+          ) : (
+            <div style={{ whiteSpace: 'pre-wrap' }}>{currentLog.content || '内容が空です'}</div>
+          )}
         </div>
       </div>
     </div>

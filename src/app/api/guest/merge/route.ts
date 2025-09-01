@@ -13,6 +13,7 @@ const DraftSchema = z.object({
   tags: z.array(z.string()).optional(),
   updatedAt: z.string().optional(),
   createdAt: z.string().optional(),
+  format: z.enum(['plain', 'markdown']).optional(),
 });
 
 const BodySchema = z.object({
@@ -27,6 +28,7 @@ type BulkDoc = {
   createdAt: Date;
   updatedAt: Date;
   guestTempId: string;
+  format: 'plain' | 'markdown';
 };
 
 function isRequestLike(obj: unknown): obj is { json: () => Promise<unknown> } {
@@ -102,6 +104,7 @@ export async function POST(req: Request) {
         createdAt: d.createdAt ? new Date(d.createdAt) : new Date(),
         updatedAt: d.updatedAt ? new Date(d.updatedAt) : new Date(),
         guestTempId: d.tempId,
+        format: d.format ?? 'plain',
       };
 
       return {

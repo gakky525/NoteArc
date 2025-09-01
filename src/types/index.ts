@@ -4,5 +4,8 @@ export type Log = {
   content: string;
   date: string;
   tags: string[];
+  format: 'plain' | 'markdown';
   folderId?: string;
+  userId?: string;
+  _isGuest?: boolean;
 };

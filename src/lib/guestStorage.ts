@@ -5,18 +5,45 @@ export type GuestDraft = {
   tags?: string[];
   createdAt?: string;
   updatedAt?: string;
+  format?: 'plain' | 'markdown';
 };
 
 const STORAGE_KEY = 'notearc_guest_drafts_v1';
+
+function safeParse<T>(raw: string | null): T | null {
+  try {
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch (e) {
+    console.warn('safeParse failed', e);
+    return null;
+  }
+}
 
 export function getGuestDrafts(): GuestDraft[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
+    const parsed = safeParse<unknown>(raw);
+    if (!parsed) return [];
     if (!Array.isArray(parsed)) return [];
-    return parsed as GuestDraft[];
+    return parsed
+      .map(item => {
+        if (item && typeof item === 'object') {
+          const obj = item as Partial<GuestDraft>;
+          return {
+            tempId: typeof obj.tempId === 'string' ? obj.tempId : `guest-${Date.now()}`,
+            title: typeof obj.title === 'string' ? obj.title : undefined,
+            content: typeof obj.content === 'string' ? obj.content : undefined,
+            tags: Array.isArray(obj.tags) ? (obj.tags as string[]) : undefined,
+            createdAt: typeof obj.createdAt === 'string' ? obj.createdAt : undefined,
+            updatedAt: typeof obj.updatedAt === 'string' ? obj.updatedAt : undefined,
+            format: obj.format === 'plain' || obj.format === 'markdown' ? obj.format : undefined,
+          } as GuestDraft;
+        }
+        return null;
+      })
+      .filter(Boolean) as GuestDraft[];
   } catch (e) {
     console.warn('getGuestDrafts parse failed', e);
     return [];
@@ -26,7 +53,11 @@ export function getGuestDrafts(): GuestDraft[] {
 export function saveGuestDraft(draft: GuestDraft): GuestDraft {
   if (typeof window === 'undefined') return draft;
   const now = new Date().toISOString();
-  const d = { ...draft, updatedAt: draft.updatedAt ?? now, createdAt: draft.createdAt ?? now };
+  const d: GuestDraft = {
+    ...draft,
+    updatedAt: draft.updatedAt ?? now,
+    createdAt: draft.createdAt ?? now,
+  };
   const all = getGuestDrafts();
   const idx = all.findIndex(x => x.tempId === d.tempId);
   if (idx >= 0) {
@@ -34,7 +65,11 @@ export function saveGuestDraft(draft: GuestDraft): GuestDraft {
   } else {
     all.unshift(d);
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  } catch (e) {
+    console.warn('saveGuestDraft failed to write localStorage', e);
+  }
   return d;
 }
 
@@ -42,6 +77,7 @@ export function createGuestDraft(input: {
   title?: string;
   content?: string;
   tags?: string[];
+  format?: 'plain' | 'markdown';
 }): GuestDraft {
   const tempId = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const now = new Date().toISOString();
@@ -52,6 +88,7 @@ export function createGuestDraft(input: {
     tags: input.tags ?? [],
     createdAt: now,
     updatedAt: now,
+    format: input.format ?? 'plain',
   };
   saveGuestDraft(draft);
   return draft;
@@ -85,6 +122,7 @@ export function buildMergePayload() {
     tags: d.tags ?? [],
     updatedAt: d.updatedAt,
     createdAt: d.createdAt,
+    format: d.format,
   }));
   return { drafts };
 }

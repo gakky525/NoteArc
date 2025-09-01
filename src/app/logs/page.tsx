@@ -15,6 +15,9 @@ type ServerLogShape = {
   content: string;
   date: string;
   tags?: string[];
+  format?: 'plain' | 'markdown';
+  userId?: string;
+  guestTempId?: string;
 };
 
 export default function LogsPage() {
@@ -45,6 +48,8 @@ export default function LogsPage() {
       content: item.content,
       date: item.date ?? new Date().toISOString(),
       tags: item.tags ?? [],
+      format: item.format ?? 'plain',
+      _isGuest: !!item.guestTempId && !item.userId,
     };
   }
 
@@ -89,6 +94,7 @@ export default function LogsPage() {
           content: d.content ?? '',
           date: d.updatedAt ?? d.createdAt ?? new Date().toISOString(),
           tags: d.tags ?? [],
+          format: d.format ?? 'plain',
           _isGuest: true,
         }));
         setLogs(mapped);
@@ -147,6 +153,7 @@ export default function LogsPage() {
           content: g.content ?? '',
           date: g.updatedAt ?? g.createdAt ?? new Date().toISOString(),
           tags: g.tags ?? [],
+          format: g.format ?? 'plain',
           _isGuest: true,
         });
         setModalOpen(true);
@@ -166,6 +173,7 @@ export default function LogsPage() {
           content: data.content,
           date: data.date ?? new Date().toISOString(),
           tags: data.tags ?? [],
+          format: data.format ?? 'plain',
         };
         setSelectedLog(fetched);
         setModalOpen(true);
@@ -178,7 +186,7 @@ export default function LogsPage() {
 
   const openLog = (log: LogType) => {
     // URL に反映してモーダルを開く
-    router.replace(`/logs?open=${log._id}`);
+    router.replace(`/logs?open=${encodeURIComponent(log._id)}`);
     setSelectedLog(log);
     setModalOpen(true);
   };
@@ -239,7 +247,8 @@ export default function LogsPage() {
   return (
     <div>
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold">NoteArc</h1>
+        <h2 className="text-2xl font-bold">
           {isAuthenticated
             ? session.user?.name
               ? `${session.user.name}さんの学習ログ`
@@ -247,7 +256,7 @@ export default function LogsPage() {
             : isGuestViewing
             ? 'ゲスト'
             : '学習ログ'}
-        </h1>
+        </h2>
 
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
@@ -356,7 +365,8 @@ export default function LogsPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium">{log.title}</h3>
                 <div className="text-xs text-gray-500 whitespace-nowrap">
-                  {new Date(log.date).toLocaleDateString()}
+                  {new Date(log.date).toLocaleDateString()} ・{' '}
+                  {log.format === 'markdown' ? 'Markdown' : 'テキスト'}
                 </div>
               </div>
               <div className="mt-3 flex gap-2 flex-wrap">
